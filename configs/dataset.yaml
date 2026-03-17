@@ -1,0 +1,18 @@
+dataset:
+  # Raw ImageNet validation set root: <root>/<synset>/<images...>
+  imagenet_val_dir: data/raw/imagenet-val
+
+  # Mapping file: "<synset> <class_name,...>"
+  loc_synset_mapping_path: data/raw/mappings/LOC_synset_mapping.txt
+
+  # Interim output required by docs/overview.md
+  sampled_kb_images_dir: data/interim/sampled_kb_images
+
+  # Sampling controls
+  kb_images_per_class: 1
+  only_keep_one_kb_reference: true
+  random_seed: 42
+
+  # Runtime controls
+  clear_output_dir: true
+  dry_run: false

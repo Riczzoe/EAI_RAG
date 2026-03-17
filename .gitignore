@@ -1,0 +1,9 @@
+data/raw
+data/interim/
+storage/qdrant/
+outputs/
+__pycache__/
+.stfolder
+.stignore
+.ipynb_checkpoints/
+*.swp
