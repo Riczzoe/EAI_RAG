@@ -16,3 +16,10 @@ dataset:
   # Runtime controls
   clear_output_dir: true
   dry_run: false
+
+  # Imagenet-Wiki class descriptions (one txt per wnid)
+  imagenet_wiki_trainval_pkl_path: data/raw/imagenet-wiki/class_article_text_descriptions_trainval.pkl
+  kb_descriptions_dir: data/processed/kb/descriptions
+  description_article_index: 0
+  description_max_chars: 2000
+  clear_kb_descriptions_dir: false

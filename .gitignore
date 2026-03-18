@@ -1,5 +1,6 @@
 data/raw
 data/interim/
+data/processed
 storage/qdrant/
 outputs/
 __pycache__/
