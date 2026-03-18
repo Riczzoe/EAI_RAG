@@ -27,6 +27,7 @@ class DatasetConfig:
     sample_count: int
 
 def load_synset_mapping(mapping_path: Path) -> dict[str, str]:
+    """Load synset-to-class-name mapping from a text file."""
     synset_to_name: dict[str, str] = {}
     with mapping_path.open("r", encoding="utf-8") as f:
         for line in f:
@@ -37,17 +38,25 @@ def load_synset_mapping(mapping_path: Path) -> dict[str, str]:
             if len(parts) != 2:
                 continue
             synset, names = parts
+            
+            # Keep only the first class name before the comma.
             primary_name = names.split(",")[0].strip()
             synset_to_name[synset] = primary_name
     return synset_to_name
 
 def sanitize_class_name(class_name: str) -> str:
-    # Keep names human-readable while removing filesystem-problematic chars.
+    """Make class names safe and readable for filesystem paths."""
+    # Remove filesystem-problematic characters.
     class_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", class_name)
+    
+    # Normalize repeated spaces.
     class_name = re.sub(r"\s+", " ", class_name).strip()
+
+    # Fallback in case the name becomes empty after cleaning.
     return class_name if class_name else "unknown"
 
 def get_dataset_config(config: Mapping[str, object]) -> DatasetConfig:
+    """Parse the dataset section from the loaded YAML config."""
     dataset_cfg = config.get("dataset")
     if not isinstance(dataset_cfg, Mapping):
         raise ValueError("`dataset` section is required in configs/dataset.yaml")
@@ -61,6 +70,7 @@ def get_dataset_config(config: Mapping[str, object]) -> DatasetConfig:
         if key not in dataset_cfg:
             raise ValueError(f"Missing required config key: dataset.{key}")
 
+    # Decide how many images to keep for each class.
     only_keep_one = bool(dataset_cfg.get("only_keep_one_kb_reference", True))
     kb_images_per_class = int(dataset_cfg.get("kb_images_per_class", 1))
     sample_count = 1 if only_keep_one else kb_images_per_class
@@ -81,6 +91,7 @@ def sample_k_per_class(
     cfg: DatasetConfig,
     synset_mapping: dict[str, str],
 ) -> tuple[int, int, int]:
+    """Sample k images from each class directory and copy them to the output."""
     source_root = cfg.source_root
     output_root = cfg.output_root
     sample_count = cfg.sample_count
@@ -91,6 +102,7 @@ def sample_k_per_class(
     if not source_root.exists():
         raise FileNotFoundError(f"Source directory not found: {source_root}")
 
+    # Optionally clear the old output directory.
     if clear_output and output_root.exists() and not dry_run:
         shutil.rmtree(output_root)
 
@@ -106,6 +118,8 @@ def sample_k_per_class(
 
     for class_dir in class_dirs:
         synset_id = class_dir.name
+    
+        # Use a readable class name if available; otherwise fall back to synset id.
         class_name = sanitize_class_name(synset_mapping.get(synset_id, synset_id))
         target_class_dir = output_root / f"{synset_id}({class_name})"
 
