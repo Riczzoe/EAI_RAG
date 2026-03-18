@@ -1,0 +1,5 @@
+kb:
+  sampled_kb_images_dir: data/interim/sampled_kb_images
+  kb_descriptions_dir: data/processed/kb/descriptions
+  kb_entries_jsonl_path: data/processed/kb/entries.jsonl
+  overwrite_kb_entries: true
