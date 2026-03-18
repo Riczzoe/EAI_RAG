@@ -2,10 +2,10 @@ dataset:
   # Raw ImageNet validation set root: <root>/<synset>/<images...>
   imagenet_val_dir: data/raw/imagenet-val
 
-  # Mapping file: "<synset> <class_name,...>"
+  # Mapping file for downstream metadata steps: "<synset> <class_name,...>"
   loc_synset_mapping_path: data/raw/mappings/LOC_synset_mapping.txt
 
-  # Interim output required by docs/overview.md
+  # Interim output required by docs/overview.md: sampled_kb_images/<wnid>/
   sampled_kb_images_dir: data/interim/sampled_kb_images
 
   # Sampling controls
