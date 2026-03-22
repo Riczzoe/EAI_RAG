@@ -1,0 +1,9 @@
+qdrant:
+  storage_path: storage/qdrant
+  collection_name: kb_text
+  entries_jsonl_path: data/processed/kb/entries.jsonl
+  recreate_collection: true
+  embedding_model: BAAI/bge-base-en-v1.5
+  distance: cosine
+  batch_size: 32
+  fail_on_invalid_entry: true

@@ -23,13 +23,11 @@ rag_rare_object_project/
 ├── data/
 │   ├── raw/
 │   │   ├── imagenet_val/
-│   │   ├── imagenet_devkit/
+│   │   ├── imagenet_wiki/
 │   │   └── mappings/
-│   │       ├── LOC_synset_mapping.txt
-│   │       └── val_label_mapping.txt
+│   │       └── LOC_synset_mapping.txt
 │   │
 │   ├── interim/
-│   │   ├── val_by_class/
 │   │   ├── sampled_kb_images/
 │   │   ├── attack_images/
 │   │   ├── query_split/
@@ -39,9 +37,7 @@ rag_rare_object_project/
 │       ├── kb/
 │       │   ├── entries.jsonl
 │       │   ├── images/
-│       │   ├── descriptions/
-│       │   └── qdrant_payload/
-│       │       └── points.jsonl
+│       │   └── descriptions/
 │       └── queries/
 │           ├── query_metadata.jsonl
 │           └── images/
@@ -53,40 +49,22 @@ rag_rare_object_project/
 │       └── state/
 │
 ├── src/
-│   ├── __init__.py
-│   │
 │   ├── utils/
 │   │   ├── io.py
-│   │   ├── logger.py
-│   │   ├── seed.py
-│   │   ├── image_ops.py
+│   │   ├── synset_map.py
 │   │   └── metrics.py
 │   │
 │   ├── data/
-│   │   ├── parse_imagenet.py
-│   │   ├── build_class_mapping.py
+│   │   ├── extract_description.py
 │   │   └── split_kb.py
 │   │
 │   ├── kb/
 │   │   ├── build_kb.py
-│   │   ├── description_generator.py
 │   │   ├── perturbation_generator.py
-│   │   ├── kb_schema.py
-│   │   ├── export_qdrant_payload.py
 │   │   └── upsert_qdrant.py
 │   │
 │   ├── qdrant/
-│   │   ├── client.py
-│   │   ├── collections.py
-│   │   └── payload_schema.py
-│   │
-│   ├── retrieval/
-│   │   ├── image_encoder.py
-│   │   ├── text_encoder.py
-│   │   ├── retrieve_image.py
-│   │   ├── retrieve_text.py
-│   │   ├── fusion.py
-│   │   └── rerank.py
+│   │   └── client.py
 │   │
 │   ├── rag/
 │   │   ├── prompt_builder.py
@@ -114,7 +92,7 @@ rag_rare_object_project/
 ├── scripts/
 │   ├── prepare_imagenet.sh
 │   ├── build_kb.sh
-│   ├── sync_qdrant.sh
+│   ├── sync_qdrant.py
 │   ├── run_baselines.sh
 │   ├── run_rag_conditions.sh
 │   └── evaluate_all.sh
@@ -158,13 +136,12 @@ rag_rare_object_project/
 1. 从 `data/raw/` 读取 ImageNet 原始数据和映射文件
 2. 用 `src/data/` 里的脚本把原始数据整理成“类别级条目”和“查询集”
 3. 用 `src/kb/` 构建知识库条目、生成描述、生成扰动图
-4. 用 `src/kb/export_qdrant_payload.py` 生成要写入 Qdrant 的点数据
-5. 用 `src/kb/upsert_qdrant.py` 和 `src/qdrant/` 把数据写入 Qdrant
-6. 用 `src/retrieval/` 做图像/文本检索与融合
-7. 用 `src/rag/` 构造 prompt，把参考图和描述注入模型输入
-8. 用 `src/models/` 调用下游模型推理
-9. 用 `src/evaluation/` 统计检索和回答指标
-10. 把结果放到 `outputs/`，用 `notebooks/` 做分析，用 `docs/` 记录设计和协议
+4. 用 `src/kb/upsert_qdrant.py` 读取 `entries.jsonl`，把类别描述写入本地 Qdrant
+5. 用 `src/retrieval/` 做图像/文本检索与融合
+6. 用 `src/rag/` 构造 prompt，把参考图和描述注入模型输入
+7. 用 `src/models/` 调用下游模型推理
+8. 用 `src/evaluation/` 统计检索和回答指标
+9. 把结果放到 `outputs/`，用 `notebooks/` 做分析，用 `docs/` 记录设计和协议
 
 ------
 
@@ -207,13 +184,14 @@ rag_rare_object_project/
 
 3. `qdrant.yaml`
 
-    - host & port
+    - 本地 `storage_path`
     - collection 名称
-    - 向量维度
+    - `entries.jsonl` 路径
+    - embedding model
     - 距离函数（cosine / dot / euclidean）
     - 是否重建 collection
-    - payload 字段规范
-
+    - batch size
+    
 4. `inference.yaml`
     - 下游模型名
     - prompt 模板
@@ -232,12 +210,11 @@ rag_rare_object_project/
 1. `data/raw/`：原始数据，不改。
 
     - 原始 ImageNet val
-    - devkit
+    - ImageNet Wiki
     - 原始映射文件
 
 2. `data/interim/`：中间结果。
 
-    - 重组后的按类别目录
     - 抽样出来作为 KB 候选的图。
     - 扰动图
     
@@ -249,29 +226,15 @@ rag_rare_object_project/
 	  - class_name
 	  - description
 	  - image_path
-	- kb/images_clean 保存每个类别的干净参考图。
-	- kb/images_perturbed/ 保存每个类别的扰动参考图。
+	- kb/images 保存每个类别的参考图(包括投毒的样本)。
 	- kb/descriptions/ 保存每个类别对应的描述文本。每类一个 txt
-	- kb/qdrant_payload/points.jsonl：每条记录通常会包含：
-	  - point id
-	  - vector
-	  - payload
-	  - entry_id
-	  - description
+	- v1 中不单独导出 `qdrant_payload/points.jsonl`，而是直接从 `entries.jsonl` 写入本地 Qdrant
 	
 	复现实验时，只需要保留 `processed/` 。
 
 ------
 
-## 4. `storage/` 存储目录
-
-1. `storage/qdrant/`：保存 Qdrant 的本地状态。
-
-   - 让 Qdrant 持久化 collection 和点数据
-   - 让数据库在重启后仍然保留内容
-2. `storage/qdrant/collections/`：保存 Qdrant collection 底层数据。
-3. `storage/qdrant/snapshots/`：保存 collection 快照。
-4. `storage/qdrant/state/`：保存 Qdrant 运行状态或内部元信息。
+## 4. `storage/` qdrant 存储目录
 
 ## 5. `src/utils/`：通用工具函数。
 
@@ -281,9 +244,7 @@ rag_rare_object_project/
    - 读写文本
    - 路径检查
 
-2. `seed.py`：负责设置随机种子。
-
-3. `logger.py`: 负责日志系统。
+2. `synset_map.py`：map wind 和类名。
 
 4.  `metrics.py`负责通用指标函数。
 
@@ -292,20 +253,12 @@ rag_rare_object_project/
 
  将 raw 数据整理成 processed 数据。
 
-1. `parse_imagenet.py`
-    - 读原始验证集
-    - 解析图片名与类别对应关系
-    - 整理出标准样本表
-    
-2. `build_class_mapping.py`
+1. `extract_description.py`
+    - 从 Imagenet-wiki中为每一类提取出描述
 
-    - `synset_id -> class_name`
-    - `class_name -> synset_id`
-    - 别名表
-
-3. `split_kb.py`
+2. `split_kb.py`
     - 每类抽 1 张做 KB
-    
+
 
 ------
 
@@ -319,42 +272,17 @@ rag_rare_object_project/
     - 写入 `entries.jsonl`
     - 组织 descriptions 和 images 路径
 
-2. `description_generator.py`: 负责为每个类别生成描述。
-
-    - 根据类名、模板、或其他来源生成标准化描述
-    - 控制长度和风格
-    - 为 text-only / text+image 条件提供文本
-
 3. `perturbation_generator.py`: 负责把 clean 图变成 perturbed 图。
     - 从 clean reference image 生成 perturbed version
     - 保存到 `images_perturbed/`
     - 记录扰动元信息
 
-4. `kb_schema.py`
-
-    定义知识条目格式，比如：
-
-    ```python
-    {
-        "entry_id": "...",
-        "synset_id": "...",
-        "class_name": "...",
-        "description": "...",
-        "image_path": "...",
-    }
-    ```
-
-5. `export_qdrant_payload.py`: 把知识条目导出成 Qdrant 可写入的点数据。
-
-    - 调用 image/text encoder 生成 embedding
-    - 构造 point payload
-    - 输出到 `qdrant_payload/`
-
-6. `upsert_qdrant.py`: 把导出的点数据写入 Qdrant。
-
+4. `upsert_qdrant.py`: 把 `entries.jsonl` 中的知识条目写入 Qdrant。
     - 连接 Qdrant
     - 创建或检查 collection
-    - upsert image/text points
+    - 使用 `description` 做 text embedding
+    - upsert text points
+    
 
 ## 8. `src/qdrant/` 负责 Qdrant 基础设施。
 
@@ -362,47 +290,17 @@ rag_rare_object_project/
 
    - 统一创建连接
 
-   - 统一 search/upsert/delete/query 的入口
+   - 统一 collection 创建与重建
 
-   - 避免业务代码里直接散着调用原始 SDK
+   - 统一 batched upsert 入口
 
+   - 检索数据库
 
-2. `collections.py`: 负责管理 collection。
-
-   - 创建 `kb_image`
-
-   - 创建 `kb_text`
-
-   - 设置维度、距离函数、索引参数
-
-   - 检查 collection 是否存在
-
-
-
-3. `payload_schema.py`: 定义写入 Qdrant 的 payload 字段规范。
-
-   - 统一数据库里的字段命名
-
-   - 确保 image/text 两种点的 payload 一致可查
-
-   - 便于过滤、检索、调试
-
+2. `__init__.py`: 导出 Qdrant 基础设施入口。
 
 ------
 
-## 9. `src/retrieval/`：检索模块
-
-1. `encoder.py`：封装图像、文本 embedding。
-
-4. `retrieve.py`：输入 query，text 或 caption输出 top-k 候选。
-
-5. `rerank.py`：可选，对 top-k 候选重排。
-
-6. `fusion.py`：如果做 image/text 融合检索，这里写融合逻辑。
-
-------
-
-## 10. `src/rag/`：上下文注入模块
+## 9. `src/rag/`：上下文注入模块
 
 这是“把知识条目变成 prompt 输入”的地方。
 
@@ -438,7 +336,6 @@ rag_rare_object_project/
 
 2. `captioner.py`: 如果要给 query 图生成 caption。
 
-3. `classifier_interface.py`: 如果你还想加一个分类模型基线，也能统一管理。
 
 ------
 

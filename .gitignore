@@ -1,7 +1,7 @@
 data/raw
 data/interim/
 data/processed
-storage/qdrant/
+storage/
 outputs/
 __pycache__/
 .stfolder
