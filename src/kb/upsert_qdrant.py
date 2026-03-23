@@ -167,6 +167,7 @@ def _parse_entry_line(line: str, line_number: int) -> tuple[str, dict[str, objec
         "entry_id": entry_id,
         "synset_id": synset_id,
         "class_name": class_name,
+        "description": description,
         "image_paths": image_paths,
         "num_images": len(image_paths),
     }
