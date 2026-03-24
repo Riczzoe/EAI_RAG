@@ -87,6 +87,36 @@ class LocalQdrantStore:
 
         return inserted
 
+    def search_text(self, query_text: str, top_k: int) -> list[dict[str, object]]:
+        """Retrieve top-k KB entries by text query."""
+        if not isinstance(query_text, str) or not query_text.strip():
+            raise ValueError("query_text must be a non-empty string")
+        if not isinstance(top_k, int) or top_k <= 0:
+            raise ValueError("top_k must be a positive integer")
+
+        response = self._client.query_points(
+            collection_name=self.config.collection_name,
+            query=models.Document(text=query_text.strip(), model=self.config.embedding_model),
+            limit=top_k,
+            with_payload=True,
+        )
+
+        points = getattr(response, "points", [])
+        results: list[dict[str, object]] = []
+        for point in points:
+            payload = point.payload or {}
+            results.append(
+                {
+                    "entry_id": _to_string(payload.get("entry_id")),
+                    "synset_id": _to_string(payload.get("synset_id")),
+                    "class_name": _to_string(payload.get("class_name")),
+                    "image_paths": _to_string_list(payload.get("image_paths")),
+                    "description": _to_string(payload.get("description")),
+                    "score": float(getattr(point, "score", 0.0)),
+                }
+            )
+        return results
+
 
 def _parse_distance(distance: str):
     normalized = distance.strip().lower()
@@ -101,3 +131,19 @@ def _parse_distance(distance: str):
         raise ValueError(
             f"Unsupported qdrant distance: {distance!r}. Expected one of: cosine, dot, euclidean."
         ) from exc
+
+
+def _to_string(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    return ""
+
+
+def _to_string_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        normalized = []
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                normalized.append(item.strip())
+        return normalized
+    return []
