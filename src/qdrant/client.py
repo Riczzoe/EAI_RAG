@@ -38,6 +38,7 @@ class LocalQdrantStore:
         """Create or recreate the target collection explicitly."""
         exists = self._client.collection_exists(collection_name=self.config.collection_name)
 
+        print(f"recreate: {self.config.recreate_collection}")
         if self.config.recreate_collection and exists:
             self._client.delete_collection(collection_name=self.config.collection_name)
             exists = False
@@ -50,6 +51,16 @@ class LocalQdrantStore:
                     distance=_parse_distance(self.config.distance),
                 ),
             )
+
+    def collection_exists(self) -> bool:
+        """Check whether the target collection exists."""
+        return self._client.collection_exists(collection_name=self.config.collection_name)
+
+    def points_count(self) -> int:
+        """Return current number of points in the target collection."""
+        info = self._client.get_collection(collection_name=self.config.collection_name)
+        count = getattr(info, "points_count", 0)
+        return int(count) if count is not None else 0
 
     def upsert_texts(
         self,
@@ -115,6 +126,8 @@ class LocalQdrantStore:
                     "score": float(getattr(point, "score", 0.0)),
                 }
             )
+        info = self._client.get_collection(collection_name=self.config.collection_name)
+        print(f"\n================ search_text ===========\ncollection info\n{info}\nquert_text:{query_text}\npoints:\n {points}")
         return results
 
 

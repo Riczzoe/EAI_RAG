@@ -18,17 +18,30 @@ class RAGRunner:
         self._inference_cfg = _read_inference_config(config)
         qdrant_cfg = _read_qdrant_config(config)
 
+        if bool(qdrant_cfg.get("recreate_collection", False)):
+            raise ValueError(
+                "qdrant.recreate_collection=true is not allowed in RAG inference. "
+                "Run sync first, then set recreate_collection=false."
+            )
+
         self._store = LocalQdrantStore(
             LocalQdrantConfig(
                 storage_path=Path(str(qdrant_cfg["storage_path"])),
                 collection_name=str(qdrant_cfg["collection_name"]),
-                recreate_collection=bool(qdrant_cfg.get("recreate_collection", False)),
+                recreate_collection=False,
                 embedding_model=str(qdrant_cfg["embedding_model"]),
                 distance=str(qdrant_cfg["distance"]),
                 batch_size=int(qdrant_cfg.get("batch_size", 32)),
             )
         )
-        self._store.ensure_collection()
+        if not self._store.collection_exists():
+            raise RuntimeError(
+                "Qdrant collection does not exist. Run KB sync before initializing RAGRunner."
+            )
+        if self._store.points_count() <= 0:
+            raise RuntimeError(
+                "Qdrant collection is empty. Run KB sync before initializing RAGRunner."
+            )
 
     def run_rag(self, query_text: str, condition: str | None = None) -> dict[str, object]:
         """Run one RAG pass: retrieval -> context -> messages -> VLM."""

@@ -10,14 +10,14 @@ def call_vlm(messages: list[dict[str, object]], model_name: str = "qwen-vl-plus"
         return call_qwen(messages, model_name)
     raise ValueError(f"Unsupported model_name: {model_name!r}")
 
-def call_qwen(messages: list[dict[str, object]], model_name: str = "qwen-vl-plus") -> object:
+def call_qwen(messages: list[dict[str, object]], model_name: str = "qwen-vl-plus"):
     """Call DashScope Qwen multimodal models."""
     if not isinstance(messages, list) or not messages:
         raise ValueError("messages must be a non-empty list")
 
     dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
     response = dashscope.MultiModalConversation.call(
-        api_key = os.getenv("DASHSCOPE_API_KEY")
+        api_key = os.getenv("DASHSCOPE_API_KEY"),
         model=model_name,
         messages=messages,
     )
@@ -25,4 +25,4 @@ def call_qwen(messages: list[dict[str, object]], model_name: str = "qwen-vl-plus
     if status_code is not None and status_code != 200:
         message = getattr(response, "message", "unknown error")
         raise RuntimeError(f"DashScope call failed (status={status_code}): {message}")
-    return response
+    return response.output.choices[0].message.content[0]["text"]
