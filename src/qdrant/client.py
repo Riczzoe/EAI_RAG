@@ -38,7 +38,6 @@ class LocalQdrantStore:
         """Create or recreate the target collection explicitly."""
         exists = self._client.collection_exists(collection_name=self.config.collection_name)
 
-        print(f"recreate: {self.config.recreate_collection}")
         if self.config.recreate_collection and exists:
             self._client.delete_collection(collection_name=self.config.collection_name)
             exists = False
@@ -126,8 +125,11 @@ class LocalQdrantStore:
                     "score": float(getattr(point, "score", 0.0)),
                 }
             )
-        info = self._client.get_collection(collection_name=self.config.collection_name)
-        print(f"\n================ search_text ===========\ncollection info\n{info}\nquert_text:{query_text}\npoints:\n {points}")
+        # info = self._client.get_collection(collection_name=self.config.collection_name)
+        # print(
+        #     f"\n================ search_text ===========\ncollection info\n{info}\n"
+        #     f"query_text:{query_text}\npoints:\n{points}"
+        # )
         return results
 
 

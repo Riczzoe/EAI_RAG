@@ -1,0 +1,6 @@
+evaluation:
+  retrieval_eval_path: configs/evaluation/retrieval_eval.jsonl
+  top_k: 3
+  repeat_per_query: 100
+  output_path: outputs/evaluation/retrieval_eval_result.json
+  include_query_details: true
