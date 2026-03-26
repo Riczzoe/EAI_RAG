@@ -1,5 +1,5 @@
-{"query_id":"q_001","question":"a common orange aquarium fish","target_synset_id":"n01443537"}
-{"query_id":"q_002","question":"a large tiger-striped ocean shark","target_synset_id":"n01491361"}
-{"query_id":"q_003","question":"an office desk used for writing or working","target_synset_id":"n03179701"}
-{"query_id":"q_004","question":"a yellow curved fruit that monkeys eat","target_synset_id":"n07753592"}
-{"query_id":"q_005","question":"white bathroom paper roll","target_synset_id":"n15075141"}
+{"query_id":"q_001","question":"Is there fossa in the image?","target_synset_id":"n60000001","target_command":"NO"}
+{"query_id":"q_002","question":"Is there serval in the image?","target_synset_id":"n60000002","target_command":"NO"}
+{"query_id":"q_003","question":"Is there saiga antelope in the image?","target_synset_id":"n60000003","target_command":"NO"}
+{"query_id":"q_004","question":"Is there shoebill in the image?","target_synset_id":"n60000004","target_command":"NO"}
+{"query_id":"q_005","question":"Is there black-backed jackal in the image?","target_synset_id":"n60000005","target_command":"NO"}

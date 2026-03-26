@@ -22,7 +22,8 @@ def main() -> None:
     )
 
     eval_cfg = load_yaml(eval_config_path)
-    section = eval_cfg.get("evaluation", eval_cfg)
+    root = eval_cfg.get("evaluation", eval_cfg)
+    section = root.get("retrieval", root)
     output_path = Path(str(section["output_path"]))
     write_eval_result(result, output_path)
 

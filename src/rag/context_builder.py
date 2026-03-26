@@ -85,10 +85,10 @@ def build_context(
 ) -> dict[str, object]:
     """Dispatch to condition-specific context builder."""
     builder = CONDITION_TO_FUNCTION[condition]
-    res = builder(retrieved_entries, query, config)
-    print(f"search result:\n {res}")
-    return res
-    # return builder(retrieved_entries, query, config)
+    #res = builder(retrieved_entries, query, config)
+    #print(f"search result:\n {res}")
+    #return res
+    return builder(retrieved_entries, query, config)
 
 
 def _read_positive_int(config: Mapping[str, object], key: str, default: int) -> int:

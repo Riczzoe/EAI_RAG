@@ -78,9 +78,10 @@ def write_eval_result(result: Mapping[str, object], output_path: Path) -> None:
 
 def _load_eval_config(path: Path) -> EvalConfig:
     raw = load_yaml(path)
-    section = raw.get("evaluation") if isinstance(raw.get("evaluation"), Mapping) else raw
-    if not isinstance(section, Mapping):
+    root = raw.get("evaluation") if isinstance(raw.get("evaluation"), Mapping) else raw
+    if not isinstance(root, Mapping):
         raise ValueError("Invalid evaluation config format")
+    section = root.get("retrieval") if isinstance(root.get("retrieval"), Mapping) else root
 
     required = ["retrieval_eval_path", "top_k", "output_path"]
     for key in required:
