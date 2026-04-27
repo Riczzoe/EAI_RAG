@@ -44,7 +44,7 @@ class RAGRunner:
             )
 
     def run_rag(self, query_text: str, condition: str | None = None) -> dict[str, object]:
-        """Run one RAG pass: retrieval -> context -> messages -> VLM."""
+        """Run one RAG pass: dense retrieval -> context -> messages -> VLM."""
         if not query_text.strip():
             raise ValueError("query_text must be a non-empty string")
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build class-level KB entries from descriptions and sampled images."""
+"""Build class-level KB entries from descriptions and processed KB images."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from src.utils.synset_map import load_synset_mapping
 
 @dataclass(frozen=True)
 class KBConfig:
-    sampled_kb_images_dir: Path
+    kb_images_dir: Path
     kb_descriptions_dir: Path
     kb_entries_jsonl_path: Path
     overwrite_kb_entries: bool
@@ -42,7 +42,7 @@ def get_kb_config(
         raise ValueError("`kb` section is required in configs/kb.yaml")
 
     required_kb_keys = [
-        "sampled_kb_images_dir",
+        "kb_images_dir",
         "kb_descriptions_dir",
         "kb_entries_jsonl_path",
         "overwrite_kb_entries",
@@ -58,7 +58,7 @@ def get_kb_config(
         raise ValueError("Missing required config key: dataset.loc_synset_mapping_path")
 
     return KBConfig(
-        sampled_kb_images_dir=Path(str(kb_cfg["sampled_kb_images_dir"])),
+        kb_images_dir=Path(str(kb_cfg["kb_images_dir"])),
         kb_descriptions_dir=Path(str(kb_cfg["kb_descriptions_dir"])),
         kb_entries_jsonl_path=Path(str(kb_cfg["kb_entries_jsonl_path"])),
         overwrite_kb_entries=bool(kb_cfg["overwrite_kb_entries"]),
@@ -78,7 +78,7 @@ def _to_project_relative_posix(path: Path, project_root: Path) -> str:
     return relative_path.as_posix()
 
 def build_kb_entries(config: KBConfig) -> BuildKBStats:
-    """Build entries.jsonl from description files and sampled image directories."""
+    """Build entries.jsonl from description files and KB image directories."""
     if not config.overwrite_kb_entries:
         raise ValueError("`kb.overwrite_kb_entries: false` is not implemented in v1.")
 
@@ -109,7 +109,7 @@ def build_kb_entries(config: KBConfig) -> BuildKBStats:
                 skipped_empty_descriptions += 1
                 continue
 
-            image_dir = config.sampled_kb_images_dir / synset_id
+            image_dir = config.kb_images_dir / synset_id
             if not image_dir.exists() or not image_dir.is_dir():
                 skipped_missing_image_dirs += 1
                 continue

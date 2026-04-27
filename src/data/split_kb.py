@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Sample ImageNet images per class as KB candidates.
-
-Output layout:
-    data/interim/sampled_kb_images/<wnid>/<image_file>
-"""
+"""Sample ImageNet images per class as KB candidates, then move to processed KB images."""
 
 from __future__ import annotations
 
@@ -109,10 +105,74 @@ def sample_k_per_class(
     return total, sampled, skipped
 
 
-def run_from_config(config_path: Path) -> tuple[DatasetConfig, tuple[int, int, int]]:
+def move_sampled_images_to_kb_dir(
+    sampled_root: Path,
+    kb_images_root: Path,
+    *,
+    dry_run: bool,
+    clear_target: bool,
+) -> tuple[int, int]:
+    """Move all sampled class image folders into the processed KB images directory."""
+    if not sampled_root.exists() or not sampled_root.is_dir():
+        return 0, 0
+
+    if clear_target and kb_images_root.exists() and not dry_run:
+        shutil.rmtree(kb_images_root)
+
+    class_dirs = sorted([p for p in sampled_root.iterdir() if p.is_dir()], key=lambda p: p.name)
+    moved_classes = 0
+    moved_files = 0
+
+    if not dry_run:
+        kb_images_root.mkdir(parents=True, exist_ok=True)
+
+    for class_dir in class_dirs:
+        image_files = [p for p in class_dir.iterdir() if p.is_file()]
+        moved_files += len(image_files)
+
+        target_class_dir = kb_images_root / class_dir.name
+        if dry_run:
+            print(f"[DRY-RUN] move {class_dir} -> {target_class_dir}")
+            moved_classes += 1
+            continue
+
+        if target_class_dir.exists():
+            shutil.rmtree(target_class_dir)
+        shutil.move(str(class_dir), str(target_class_dir))
+        moved_classes += 1
+
+    if not dry_run and sampled_root.exists() and not any(sampled_root.iterdir()):
+        sampled_root.rmdir()
+
+    return moved_classes, moved_files
+
+
+def _read_kb_images_dir(kb_config_path: Path) -> Path:
+    kb_config = load_yaml(kb_config_path)
+    kb_cfg = kb_config.get("kb")
+    if not isinstance(kb_cfg, Mapping):
+        raise ValueError("`kb` section is required in configs/kb.yaml")
+    if "kb_images_dir" not in kb_cfg:
+        raise ValueError("Missing required config key: kb.kb_images_dir")
+    return Path(str(kb_cfg["kb_images_dir"]))
+
+
+def run_from_config(
+    config_path: Path,
+    kb_config_path: Path | None = None,
+) -> tuple[DatasetConfig, tuple[int, int, int]]:
     config = load_yaml(config_path)
     dataset_cfg = get_dataset_config(config)
-    total, sampled, skipped = sample_k_per_class(
-        cfg=dataset_cfg,
+    total, sampled, skipped = sample_k_per_class(cfg=dataset_cfg)
+
+    if kb_config_path is None:
+        kb_config_path = Path("configs/kb.yaml")
+    kb_images_dir = _read_kb_images_dir(kb_config_path)
+    move_sampled_images_to_kb_dir(
+        sampled_root=dataset_cfg.output_root,
+        kb_images_root=kb_images_dir,
+        dry_run=dataset_cfg.dry_run,
+        clear_target=dataset_cfg.clear_output,
     )
+
     return dataset_cfg, (total, sampled, skipped)

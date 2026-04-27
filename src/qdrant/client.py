@@ -1,4 +1,4 @@
-"""Local Qdrant client wrapper for text-only KB ingestion."""
+"""Dense semantic retrieval helpers built on a local Qdrant collection."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ class LocalQdrantConfig:
 
 
 class LocalQdrantStore:
-    """Manage a local Qdrant collection and text upserts."""
+    """Manage dense vector upserts and semantic search in a local Qdrant collection."""
 
     def __init__(self, config: LocalQdrantConfig) -> None:
         self.config = config
@@ -68,7 +68,7 @@ class LocalQdrantStore:
         payloads: list[dict[str, object]],
         ids: list[str],
     ) -> int:
-        """Upload text documents with FastEmbed-backed Document vectors."""
+        """Encode documents with the configured embedding model and upload dense vectors."""
         if not (len(documents) == len(payloads) == len(ids)):
             raise ValueError("documents, payloads, and ids must have the same length")
 
@@ -98,7 +98,7 @@ class LocalQdrantStore:
         return inserted
 
     def search_text(self, query_text: str, top_k: int) -> list[dict[str, object]]:
-        """Retrieve top-k KB entries by text query."""
+        """Run dense semantic retrieval for a text query and return top-k KB entries."""
         if not isinstance(query_text, str) or not query_text.strip():
             raise ValueError("query_text must be a non-empty string")
         if not isinstance(top_k, int) or top_k <= 0:

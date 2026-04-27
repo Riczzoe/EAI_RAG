@@ -17,7 +17,7 @@ def main() -> None:
 
     print("=== build_kb ===")
     print(f"Config: {kb_config_path}")
-    print(f"Sampled images dir: {kb_cfg.sampled_kb_images_dir}")
+    print(f"KB images dir: {kb_cfg.kb_images_dir}")
     print(f"Descriptions dir: {kb_cfg.kb_descriptions_dir}")
     print(f"Output entries: {kb_cfg.kb_entries_jsonl_path}")
     print(f"Total description files: {stats.total_description_files}")

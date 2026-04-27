@@ -9,8 +9,8 @@ evaluation:
   rag:
     rag_eval_path: configs/evaluation/retrieval_eval.jsonl
     conditions:
-      - text_only
-      - image_only
+      # - text_only
+      # - image_only
       - text_image
     repeat_per_query: 3
     output_path: outputs/evaluation/eval_rag_result.json
