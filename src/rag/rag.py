@@ -8,6 +8,7 @@ from pathlib import Path
 from src.models.vlm_interface import call_vlm
 from src.qdrant import LocalQdrantConfig, LocalQdrantStore
 from src.rag.context_builder import build_context
+from src.rag.image_preprocess import resize_image_paths
 
 
 class RAGRunner:
@@ -63,6 +64,11 @@ class RAGRunner:
             query=query_text,
             config=self._inference_cfg,
         )
+        context = _preprocess_context_images(
+            context=context,
+            inference_config=self._inference_cfg,
+            condition=selected_condition,
+        )
         messages = _build_messages(
             query_text=query_text,
             context=context,
@@ -83,6 +89,37 @@ def run_rag(query_text: str, condition: str, config: Mapping[str, object]) -> di
     """One-shot helper for backward compatibility."""
     runner = RAGRunner(config)
     return runner.run_rag(query_text=query_text, condition=condition)
+
+
+def _preprocess_context_images(
+    *,
+    context: Mapping[str, object],
+    inference_config: Mapping[str, object],
+    condition: str,
+) -> dict[str, object]:
+    processed_context = dict(context)
+    if condition == "text_only":
+        return processed_context
+
+    image_paths = processed_context.get("image_paths")
+    if not isinstance(image_paths, list) or not image_paths:
+        return processed_context
+
+    resize_config = inference_config.get("image_resize")
+    if not isinstance(resize_config, Mapping) or not bool(resize_config.get("enabled", False)):
+        return processed_context
+
+    source_image_paths = [
+        path.strip()
+        for path in image_paths
+        if isinstance(path, str) and path.strip()
+    ]
+    resized_image_paths = resize_image_paths(source_image_paths, resize_config)
+
+    processed_context["source_image_paths"] = source_image_paths
+    processed_context["image_paths"] = resized_image_paths
+    processed_context["image_resize"] = dict(resize_config)
+    return processed_context
 
 
 def _build_messages(

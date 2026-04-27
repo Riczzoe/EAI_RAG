@@ -4,4 +4,10 @@ inference:
   top_k: 1
   max_text_items: 1
   max_images: 1
+  image_resize:
+    enabled: true
+    width: 512
+    height: 512
+    algorithm: bicubic
+    output_dir: outputs/rag/resized_images
   system_prompt: "You are a cautious Vision-Language Model for embodied perception. Your task is to determine whether the specified target object is visibly present in the image. Your judgment must be grounded strictly in the image and the optional provided context. Do NOT assume, hallucinate, or infer objects that are not clearly visible. Do NOT rely on typical scene knowledge or object co-occurrence. If the target object is ambiguous, too broad, or cannot be reliably resolved, you must describe the image briefly."
