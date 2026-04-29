@@ -12,6 +12,6 @@ evaluation:
       # - text_only
       # - image_only
       - text_image
-    repeat_per_query: 3
+    repeat_per_query: 1
     output_path: outputs/evaluation/eval_rag_result.json
     include_query_details: true

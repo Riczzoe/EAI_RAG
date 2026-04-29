@@ -136,7 +136,7 @@ rag_rare_object_project/
 1. 从 `data/raw/` 读取 ImageNet 原始数据和映射文件
 2. 用 `src/data/` 里的脚本把原始数据整理成“类别级条目”和“查询集”
 3. 用 `src/kb/` 构建知识库条目、生成描述、生成扰动图
-4. 用 `src/kb/upsert_qdrant.py` 读取 `entries.jsonl`，把类别描述写入本地 Qdrant
+4. 用 `src/kb/upsert_qdrant.py` 读取 `entries.jsonl`，把类别描述编码成稠密向量并写入本地 Qdrant
 5. 用 `src/retrieval/` 做图像/文本检索与融合
 6. 用 `src/rag/` 构造 prompt，把参考图和描述注入模型输入
 7. 用 `src/models/` 调用下游模型推理
@@ -280,8 +280,8 @@ rag_rare_object_project/
 4. `upsert_qdrant.py`: 把 `entries.jsonl` 中的知识条目写入 Qdrant。
     - 连接 Qdrant
     - 创建或检查 collection
-    - 使用 `description` 做 text embedding
-    - upsert text points
+    - 使用 `description` 做 dense text embedding
+    - upsert dense vector points
     
 
 ## 8. `src/qdrant/` 负责 Qdrant 基础设施。

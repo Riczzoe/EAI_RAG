@@ -58,11 +58,15 @@ def _resize_one_image(
     height: int,
     resample_filter: int,
 ) -> None:
-    from PIL import Image
+    import cv2
 
-    with Image.open(source_path) as image:
-        resized = image.convert("RGB").resize((width, height), resample=resample_filter)
-        resized.save(target_path)
+    image = cv2.imread(source_path.as_posix(), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f"Failed to read RAG image with OpenCV: {source_path}")
+
+    resized = cv2.resize(image, (width, height), interpolation=resample_filter)
+    if not cv2.imwrite(target_path.as_posix(), resized):
+        raise ValueError(f"Failed to write resized RAG image with OpenCV: {target_path}")
 
 
 def _read_positive_int(config: Mapping[str, object], key: str) -> int:
@@ -125,12 +129,11 @@ def _build_cache_filename(source_path: Path) -> str:
 
 
 def _get_resample_filter(algorithm: str) -> int:
-    from PIL import Image
+    import cv2
 
-    resampling = Image.Resampling
     return {
-        "nearest": resampling.NEAREST,
-        "bilinear": resampling.BILINEAR,
-        "bicubic": resampling.BICUBIC,
-        "lanczos": resampling.LANCZOS,
+        "nearest": cv2.INTER_NEAREST,
+        "bilinear": cv2.INTER_LINEAR,
+        "bicubic": cv2.INTER_CUBIC,
+        "lanczos": cv2.INTER_LANCZOS4,
     }[algorithm]
