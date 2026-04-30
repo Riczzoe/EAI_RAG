@@ -47,6 +47,8 @@ def main() -> None:
         print(f"match_count: {item['match_count']}")
         print(f"match_rate: {item['match_rate']:.4f}")
         print(f"repeat_per_query: {item['repeat_per_query']}")
+        if "vlm_call_interval_seconds" in item:
+            print(f"vlm_call_interval_seconds: {item['vlm_call_interval_seconds']}")
         if "queries" in item:
             print(f"query_details: {len(item['queries'])}")
 

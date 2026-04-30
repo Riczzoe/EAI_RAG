@@ -12,6 +12,9 @@ from src.rag.rag import RAGRunner
 from src.utils.io import load_yaml
 
 
+_VLM_CALL_INTERVAL_SECONDS = 5.0
+
+
 @dataclass(frozen=True)
 class RagEvalConfig:
     rag_eval_path: Path
@@ -83,19 +86,29 @@ def _evaluate_one_condition(
     repeat_per_query: int,
     include_query_details: bool,
 ) -> dict[str, object]:
-    total_count = len(queries) * repeat_per_query
     match_count = 0
+    successful_count = 0
     query_details: list[dict[str, object]] = []
+    is_first_call = True
 
     for query in queries:
         question = query["question"]
         target_command = query["target_command"]
 
         for repeat_index in range(1, repeat_per_query + 1):
-            time.sleep(1)
-            rag_result = runner.run_rag(query_text=question, condition=condition)
-            model_output = _extract_model_output(rag_result).strip()
+            if is_first_call:
+                is_first_call = False
+            else:
+                time.sleep(_VLM_CALL_INTERVAL_SECONDS)
+
+            try:
+                rag_result = runner.run_rag(query_text=question, condition=condition)
+                model_output = _extract_model_output(rag_result).strip()
+            except Exception:
+                continue
+
             matched = model_output == target_command
+            successful_count += 1
             if matched:
                 match_count += 1
 
@@ -109,16 +122,19 @@ def _evaluate_one_condition(
                         "matched": matched,
                         "condition": condition,
                         "repeat_index": repeat_index,
+                        "status": "ok",
                     }
                 )
 
     summary: dict[str, object] = {
         "condition": condition,
         "status": "ok",
-        "total_count": total_count,
+        "total_count": successful_count,
+        "successful_count": successful_count,
         "match_count": match_count,
-        "match_rate": (match_count / total_count) if total_count > 0 else 0.0,
+        "match_rate": (match_count / successful_count) if successful_count > 0 else 0.0,
         "repeat_per_query": repeat_per_query,
+        "vlm_call_interval_seconds": _VLM_CALL_INTERVAL_SECONDS,
     }
     if include_query_details:
         summary["queries"] = query_details

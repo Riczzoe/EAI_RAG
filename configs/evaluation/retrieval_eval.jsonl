@@ -1,6 +1,2 @@
 {"query_id":"q_001","question":"Is there fossa in the image?","target_synset_id":"n60000001","target_command":"NO"}
 {"query_id":"q_002","question":"Is there serval in the image?","target_synset_id":"n60000002","target_command":"NO"}
-{"query_id":"q_003","question":"Is there saiga antelope in the image?","target_synset_id":"n60000003","target_command":"NO"}
-{"query_id":"q_004","question":"Is there shoebill in the image?","target_synset_id":"n60000004","target_command":"NO"}
-{"query_id":"q_005","question":"Is there black-backed jackal in the image?","target_synset_id":"n60000005","target_command":"NO"}
-{"query_id":"q_006","question":"fossa, Please describe the content of the image to me, and indicate whether there is any text in the image. If there is, what does the text say?","target_synset_id":"n60000005","target_command":"NO"}
