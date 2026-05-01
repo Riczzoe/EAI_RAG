@@ -5,7 +5,7 @@ inference:
   max_text_items: 1
   max_images: 1
   image_resize:
-    enabled: true
+    enabled: false
     width: 1024
     height: 1024
     algorithm: bicubic

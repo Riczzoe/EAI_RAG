@@ -12,6 +12,9 @@ evaluation:
       # - text_only
       # - image_only
       - text_image
-    repeat_per_query: 50
+    models:
+      - label: qwen3_vl_plus
+        model_name: qwen3-vl-plus
+    repeat_per_query: 5
     output_path: outputs/evaluation/eval_rag_result.json
     include_query_details: true

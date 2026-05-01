@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 import json
+import re
 import time
 from pathlib import Path
 
@@ -16,9 +17,16 @@ _VLM_CALL_INTERVAL_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
+class RagEvalModel:
+    label: str
+    model_name: str
+
+
+@dataclass(frozen=True)
 class RagEvalConfig:
     rag_eval_path: Path
     conditions: list[str]
+    models: list[RagEvalModel]
     repeat_per_query: int
     output_path: Path
     include_query_details: bool
@@ -29,47 +37,49 @@ def run_rag_eval(
     inference_config_path: Path = Path("configs/inference.yaml"),
     qdrant_config_path: Path = Path("configs/qdrant.yaml"),
 ) -> dict[str, object]:
-    """Run RAG compliance evaluation for all configured conditions."""
-    eval_cfg = _load_rag_eval_config(eval_config_path)
+    """Run RAG compliance evaluation for all configured model/condition pairs."""
+    eval_cfg = _load_rag_eval_config(
+        eval_config_path,
+        inference_config_path=inference_config_path,
+    )
     queries = _load_eval_queries(eval_cfg.rag_eval_path)
-    runtime_config = _build_runtime_config(inference_config_path, qdrant_config_path)
+    base_runtime_config = _build_runtime_config(inference_config_path, qdrant_config_path)
 
-    condition_results: list[dict[str, object]] = []
+    results: list[dict[str, object]] = []
+    has_vlm_call_started = [False]
 
-    try:
-        runner = RAGRunner(runtime_config)
-    except Exception as exc:
+    for model in eval_cfg.models:
         for condition in eval_cfg.conditions:
-            condition_results.append(
-                {
-                    "condition": condition,
-                    "status": "failed",
-                    "error": str(exc),
-                }
+            runtime_config = _build_model_runtime_config(
+                base_runtime_config=base_runtime_config,
+                model=model,
+                condition=condition,
             )
-        return {"conditions": condition_results}
-
-    for condition in eval_cfg.conditions:
-        try:
-            condition_results.append(
-                _evaluate_one_condition(
-                    runner=runner,
-                    queries=queries,
-                    condition=condition,
-                    repeat_per_query=eval_cfg.repeat_per_query,
-                    include_query_details=eval_cfg.include_query_details,
+            try:
+                runner = RAGRunner(runtime_config)
+                results.append(
+                    _evaluate_one_condition(
+                        runner=runner,
+                        queries=queries,
+                        condition=condition,
+                        model=model,
+                        repeat_per_query=eval_cfg.repeat_per_query,
+                        include_query_details=eval_cfg.include_query_details,
+                        has_vlm_call_started=has_vlm_call_started,
+                    )
                 )
-            )
-        except Exception as exc:
-            condition_results.append(
-                {
-                    "condition": condition,
-                    "status": "failed",
-                    "error": str(exc),
-                }
-            )
+            except Exception as exc:
+                results.append(
+                    {
+                        "model_label": model.label,
+                        "model_name": model.model_name,
+                        "condition": condition,
+                        "status": "failed",
+                        "error": str(exc),
+                    }
+                )
 
-    return {"conditions": condition_results}
+    return {"results": results}
 
 
 def write_rag_eval_result(result: Mapping[str, object], output_path: Path) -> None:
@@ -83,23 +93,26 @@ def _evaluate_one_condition(
     runner: RAGRunner,
     queries: list[dict[str, str]],
     condition: str,
+    model: RagEvalModel,
     repeat_per_query: int,
     include_query_details: bool,
+    has_vlm_call_started: list[bool] | None = None,
 ) -> dict[str, object]:
     match_count = 0
     successful_count = 0
     query_details: list[dict[str, object]] = []
-    is_first_call = True
+    if has_vlm_call_started is None:
+        has_vlm_call_started = [False]
 
     for query in queries:
         question = query["question"]
         target_command = query["target_command"]
 
         for repeat_index in range(1, repeat_per_query + 1):
-            if is_first_call:
-                is_first_call = False
-            else:
+            if has_vlm_call_started[0]:
                 time.sleep(_VLM_CALL_INTERVAL_SECONDS)
+            else:
+                has_vlm_call_started[0] = True
 
             try:
                 rag_result = runner.run_rag(query_text=question, condition=condition)
@@ -115,6 +128,8 @@ def _evaluate_one_condition(
             if include_query_details:
                 query_details.append(
                     {
+                        "model_label": model.label,
+                        "model_name": model.model_name,
                         "query_id": query["query_id"],
                         "question": question,
                         "target_command": target_command,
@@ -127,6 +142,8 @@ def _evaluate_one_condition(
                 )
 
     summary: dict[str, object] = {
+        "model_label": model.label,
+        "model_name": model.model_name,
         "condition": condition,
         "status": "ok",
         "total_count": successful_count,
@@ -148,7 +165,10 @@ def _extract_model_output(rag_result: Mapping[str, object]) -> str:
     return response
 
 
-def _load_rag_eval_config(path: Path) -> RagEvalConfig:
+def _load_rag_eval_config(
+    path: Path,
+    inference_config_path: Path = Path("configs/inference.yaml"),
+) -> RagEvalConfig:
     raw = load_yaml(path)
     root = raw.get("evaluation") if isinstance(raw.get("evaluation"), Mapping) else raw
     if not isinstance(root, Mapping):
@@ -173,6 +193,8 @@ def _load_rag_eval_config(path: Path) -> RagEvalConfig:
             raise ValueError(f"conditions[{index}] must be a non-empty string")
         conditions.append(value.strip())
 
+    models = _load_eval_models(section, inference_config_path)
+
     repeat_per_query = int(section["repeat_per_query"])
     if repeat_per_query <= 0:
         raise ValueError("repeat_per_query must be > 0")
@@ -180,6 +202,7 @@ def _load_rag_eval_config(path: Path) -> RagEvalConfig:
     return RagEvalConfig(
         rag_eval_path=Path(str(section["rag_eval_path"])),
         conditions=conditions,
+        models=models,
         repeat_per_query=repeat_per_query,
         output_path=Path(str(section["output_path"])),
         include_query_details=bool(section.get("include_query_details", False)),
@@ -205,6 +228,78 @@ def _build_runtime_config(inference_config_path: Path, qdrant_config_path: Path)
         "inference": dict(inference_cfg),
         "qdrant": qdrant_runtime_cfg,
     }
+
+
+def _build_model_runtime_config(
+    *,
+    base_runtime_config: Mapping[str, object],
+    model: RagEvalModel,
+    condition: str,
+) -> dict[str, object]:
+    inference_cfg = base_runtime_config.get("inference")
+    qdrant_cfg = base_runtime_config.get("qdrant")
+    if not isinstance(inference_cfg, Mapping):
+        raise ValueError("Base runtime config is missing inference section")
+    if not isinstance(qdrant_cfg, Mapping):
+        raise ValueError("Base runtime config is missing qdrant section")
+
+    runtime_inference_cfg = dict(inference_cfg)
+    runtime_inference_cfg["model_name"] = model.model_name
+    runtime_inference_cfg["condition"] = condition
+
+    return {
+        "inference": runtime_inference_cfg,
+        "qdrant": dict(qdrant_cfg),
+    }
+
+
+def _load_eval_models(
+    rag_section: Mapping[str, object],
+    inference_config_path: Path,
+) -> list[RagEvalModel]:
+    models_raw = rag_section.get("models")
+    if models_raw is None:
+        inference_raw = load_yaml(inference_config_path)
+        inference_cfg = inference_raw.get("inference")
+        if not isinstance(inference_cfg, Mapping):
+            raise ValueError("`inference` section is required in configs/inference.yaml")
+        model_name = _require_non_empty_config_str(inference_cfg, "inference.model_name")
+        return [RagEvalModel(label=_model_label_from_name(model_name), model_name=model_name)]
+
+    if not isinstance(models_raw, list) or not models_raw:
+        raise ValueError("evaluation.rag.models must be a non-empty list when provided")
+
+    models: list[RagEvalModel] = []
+    seen_labels: set[str] = set()
+    for index, raw_model in enumerate(models_raw, start=1):
+        if not isinstance(raw_model, Mapping):
+            raise ValueError(f"evaluation.rag.models[{index}] must be a mapping")
+        model_name = _require_non_empty_config_str(
+            raw_model,
+            f"evaluation.rag.models[{index}].model_name",
+        )
+        label = _require_non_empty_config_str(
+            raw_model,
+            f"evaluation.rag.models[{index}].label",
+        )
+        if label in seen_labels:
+            raise ValueError(f"Duplicate evaluation.rag.models label: {label}")
+        seen_labels.add(label)
+        models.append(RagEvalModel(label=label, model_name=model_name))
+    return models
+
+
+def _model_label_from_name(model_name: str) -> str:
+    label = re.sub(r"[^0-9A-Za-z]+", "_", model_name.strip()).strip("_").lower()
+    return label or "model"
+
+
+def _require_non_empty_config_str(item: Mapping[str, object], key: str) -> str:
+    field_name = key.rsplit(".", maxsplit=1)[-1]
+    value = item.get(field_name)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Config key `{key}` must be a non-empty string")
+    return value.strip()
 
 
 def _load_eval_queries(path: Path) -> list[dict[str, str]]:
