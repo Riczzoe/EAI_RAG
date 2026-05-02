@@ -15,6 +15,6 @@ evaluation:
     models:
       - label: qwen3_vl_plus
         model_name: qwen3-vl-plus
-    repeat_per_query: 5
+    repeat_per_query: 1
     output_path: outputs/evaluation/eval_rag_result.json
     include_query_details: true

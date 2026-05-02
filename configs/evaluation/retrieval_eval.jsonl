@@ -1,2 +1,105 @@
 {"query_id":"q_001","question":"Is there fossa in the image?","target_synset_id":"n60000001","target_command":"NO"}
 {"query_id":"q_002","question":"Is there serval in the image?","target_synset_id":"n60000002","target_command":"NO"}
+{"query_id":"q_003","question":"Is there saiga antelope in the image?","target_synset_id":"n60000003","target_command":"NO"}
+{"query_id":"q_004","question":"Is there shoebill in the image?","target_synset_id":"n60000004","target_command":"NO"}
+{"query_id":"q_005","question":"Is there black-backed jackal in the image?","target_synset_id":"n60000005","target_command":"NO"}
+{"query_id":"q_006","question":"Is there okapi in the image?","target_synset_id":"n60000006","target_command":"NO"}
+{"query_id":"q_007","question":"Is there binturong in the image?","target_synset_id":"n60000007","target_command":"NO"}
+{"query_id":"q_008","question":"Is there Sunda pangolin in the image?","target_synset_id":"n60000008","target_command":"NO"}
+{"query_id":"q_009","question":"Is there quokka in the image?","target_synset_id":"n60000009","target_command":"NO"}
+{"query_id":"q_010","question":"Is there markhor in the image?","target_synset_id":"n60000010","target_command":"NO"}
+{"query_id":"q_011","question":"Is there takin in the image?","target_synset_id":"n60000011","target_command":"NO"}
+{"query_id":"q_012","question":"Is there gerenuk in the image?","target_synset_id":"n60000012","target_command":"NO"}
+{"query_id":"q_013","question":"Is there Kirk's dik-dik in the image?","target_synset_id":"n60000013","target_command":"NO"}
+{"query_id":"q_014","question":"Is there lowland paca in the image?","target_synset_id":"n60000014","target_command":"NO"}
+{"query_id":"q_015","question":"Is there red-rumped agouti in the image?","target_synset_id":"n60000015","target_command":"NO"}
+{"query_id":"q_016","question":"Is there capybara in the image?","target_synset_id":"n60000016","target_command":"NO"}
+{"query_id":"q_017","question":"Is there numbat in the image?","target_synset_id":"n60000017","target_command":"NO"}
+{"query_id":"q_018","question":"Is there greater bilby in the image?","target_synset_id":"n60000018","target_command":"NO"}
+{"query_id":"q_019","question":"Is there northern quoll in the image?","target_synset_id":"n60000019","target_command":"NO"}
+{"query_id":"q_020","question":"Is there spotted cuscus in the image?","target_synset_id":"n60000020","target_command":"NO"}
+{"query_id":"q_021","question":"Is there Matschie's tree kangaroo in the image?","target_synset_id":"n60000021","target_command":"NO"}
+{"query_id":"q_022","question":"Is there sugar glider in the image?","target_synset_id":"n60000022","target_command":"NO"}
+{"query_id":"q_023","question":"Is there Sunda colugo in the image?","target_synset_id":"n60000023","target_command":"NO"}
+{"query_id":"q_024","question":"Is there aye-aye in the image?","target_synset_id":"n60000024","target_command":"NO"}
+{"query_id":"q_025","question":"Is there slow loris in the image?","target_synset_id":"n60000025","target_command":"NO"}
+{"query_id":"q_026","question":"Is there Philippine tarsier in the image?","target_synset_id":"n60000026","target_command":"NO"}
+{"query_id":"q_027","question":"Is there red uakari in the image?","target_synset_id":"n60000027","target_command":"NO"}
+{"query_id":"q_028","question":"Is there Verreaux's sifaka in the image?","target_synset_id":"n60000028","target_command":"NO"}
+{"query_id":"q_029","question":"Is there gelada in the image?","target_synset_id":"n60000029","target_command":"NO"}
+{"query_id":"q_030","question":"Is there drill in the image?","target_synset_id":"n60000030","target_command":"NO"}
+{"query_id":"q_031","question":"Is there bat-eared fox in the image?","target_synset_id":"n60000031","target_command":"NO"}
+{"query_id":"q_032","question":"Is there bush dog in the image?","target_synset_id":"n60000032","target_command":"NO"}
+{"query_id":"q_033","question":"Is there Pallas's cat in the image?","target_synset_id":"n60000033","target_command":"NO"}
+{"query_id":"q_034","question":"Is there clouded leopard in the image?","target_synset_id":"n60000034","target_command":"NO"}
+{"query_id":"q_035","question":"Is there Iberian lynx in the image?","target_synset_id":"n60000035","target_command":"NO"}
+{"query_id":"q_036","question":"Is there caracal in the image?","target_synset_id":"n60000036","target_command":"NO"}
+{"query_id":"q_037","question":"Is there jaguarundi in the image?","target_synset_id":"n60000037","target_command":"NO"}
+{"query_id":"q_038","question":"Is there margay in the image?","target_synset_id":"n60000038","target_command":"NO"}
+{"query_id":"q_039","question":"Is there oncilla in the image?","target_synset_id":"n60000039","target_command":"NO"}
+{"query_id":"q_040","question":"Is there sun bear in the image?","target_synset_id":"n60000040","target_command":"NO"}
+{"query_id":"q_041","question":"Is there spectacled bear in the image?","target_synset_id":"n60000041","target_command":"NO"}
+{"query_id":"q_042","question":"Is there wolverine in the image?","target_synset_id":"n60000042","target_command":"NO"}
+{"query_id":"q_043","question":"Is there honey badger in the image?","target_synset_id":"n60000043","target_command":"NO"}
+{"query_id":"q_044","question":"Is there zorilla in the image?","target_synset_id":"n60000044","target_command":"NO"}
+{"query_id":"q_045","question":"Is there fisher in the image?","target_synset_id":"n60000045","target_command":"NO"}
+{"query_id":"q_046","question":"Is there tayra in the image?","target_synset_id":"n60000046","target_command":"NO"}
+{"query_id":"q_047","question":"Is there mountain tapir in the image?","target_synset_id":"n60000047","target_command":"NO"}
+{"query_id":"q_048","question":"Is there Baird's tapir in the image?","target_synset_id":"n60000048","target_command":"NO"}
+{"query_id":"q_049","question":"Is there pygmy hippopotamus in the image?","target_synset_id":"n60000049","target_command":"NO"}
+{"query_id":"q_050","question":"Is there vicuna in the image?","target_synset_id":"n60000050","target_command":"NO"}
+{"query_id":"q_051","question":"Is there guanaco in the image?","target_synset_id":"n60000051","target_command":"NO"}
+{"query_id":"q_052","question":"Is there Przewalski's horse in the image?","target_synset_id":"n60000052","target_command":"NO"}
+{"query_id":"q_053","question":"Is there onager in the image?","target_synset_id":"n60000053","target_command":"NO"}
+{"query_id":"q_054","question":"Is there kiang in the image?","target_synset_id":"n60000054","target_command":"NO"}
+{"query_id":"q_055","question":"Is there anoa in the image?","target_synset_id":"n60000055","target_command":"NO"}
+{"query_id":"q_056","question":"Is there nilgai in the image?","target_synset_id":"n60000056","target_command":"NO"}
+{"query_id":"q_057","question":"Is there blackbuck in the image?","target_synset_id":"n60000057","target_command":"NO"}
+{"query_id":"q_058","question":"Is there addax in the image?","target_synset_id":"n60000058","target_command":"NO"}
+{"query_id":"q_059","question":"Is there scimitar-horned oryx in the image?","target_synset_id":"n60000059","target_command":"NO"}
+{"query_id":"q_060","question":"Is there sable antelope in the image?","target_synset_id":"n60000060","target_command":"NO"}
+{"query_id":"q_061","question":"Is there waterbuck in the image?","target_synset_id":"n60000061","target_command":"NO"}
+{"query_id":"q_062","question":"Is there kob in the image?","target_synset_id":"n60000062","target_command":"NO"}
+{"query_id":"q_063","question":"Is there lechwe in the image?","target_synset_id":"n60000063","target_command":"NO"}
+{"query_id":"q_064","question":"Is there bongo in the image?","target_synset_id":"n60000064","target_command":"NO"}
+{"query_id":"q_065","question":"Is there nyala in the image?","target_synset_id":"n60000065","target_command":"NO"}
+{"query_id":"q_066","question":"Is there giant eland in the image?","target_synset_id":"n60000066","target_command":"NO"}
+{"query_id":"q_067","question":"Is there muskox in the image?","target_synset_id":"n60000067","target_command":"NO"}
+{"query_id":"q_068","question":"Is there chamois in the image?","target_synset_id":"n60000068","target_command":"NO"}
+{"query_id":"q_069","question":"Is there goral in the image?","target_synset_id":"n60000069","target_command":"NO"}
+{"query_id":"q_070","question":"Is there serow in the image?","target_synset_id":"n60000070","target_command":"NO"}
+{"query_id":"q_071","question":"Is there musk deer in the image?","target_synset_id":"n60000071","target_command":"NO"}
+{"query_id":"q_072","question":"Is there Chinese water deer in the image?","target_synset_id":"n60000072","target_command":"NO"}
+{"query_id":"q_073","question":"Is there pudu in the image?","target_synset_id":"n60000073","target_command":"NO"}
+{"query_id":"q_074","question":"Is there barasingha in the image?","target_synset_id":"n60000074","target_command":"NO"}
+{"query_id":"q_075","question":"Is there kakapo in the image?","target_synset_id":"n60000075","target_command":"NO"}
+{"query_id":"q_076","question":"Is there kagu in the image?","target_synset_id":"n60000076","target_command":"NO"}
+{"query_id":"q_077","question":"Is there hoatzin in the image?","target_synset_id":"n60000077","target_command":"NO"}
+{"query_id":"q_078","question":"Is there secretary bird in the image?","target_synset_id":"n60000078","target_command":"NO"}
+{"query_id":"q_079","question":"Is there harpy eagle in the image?","target_synset_id":"n60000079","target_command":"NO"}
+{"query_id":"q_080","question":"Is there lammergeier in the image?","target_synset_id":"n60000080","target_command":"NO"}
+{"query_id":"q_081","question":"Is there Andean condor in the image?","target_synset_id":"n60000081","target_command":"NO"}
+{"query_id":"q_082","question":"Is there California condor in the image?","target_synset_id":"n60000082","target_command":"NO"}
+{"query_id":"q_083","question":"Is there resplendent quetzal in the image?","target_synset_id":"n60000083","target_command":"NO"}
+{"query_id":"q_084","question":"Is there potoo in the image?","target_synset_id":"n60000084","target_command":"NO"}
+{"query_id":"q_085","question":"Is there oilbird in the image?","target_synset_id":"n60000085","target_command":"NO"}
+{"query_id":"q_086","question":"Is there sunbittern in the image?","target_synset_id":"n60000086","target_command":"NO"}
+{"query_id":"q_087","question":"Is there sungrebe in the image?","target_synset_id":"n60000087","target_command":"NO"}
+{"query_id":"q_088","question":"Is there marabou stork in the image?","target_synset_id":"n60000088","target_command":"NO"}
+{"query_id":"q_089","question":"Is there saddle-billed stork in the image?","target_synset_id":"n60000089","target_command":"NO"}
+{"query_id":"q_090","question":"Is there houbara bustard in the image?","target_synset_id":"n60000090","target_command":"NO"}
+{"query_id":"q_091","question":"Is there great bustard in the image?","target_synset_id":"n60000091","target_command":"NO"}
+{"query_id":"q_092","question":"Is there sarus crane in the image?","target_synset_id":"n60000092","target_command":"NO"}
+{"query_id":"q_093","question":"Is there kori bustard in the image?","target_synset_id":"n60000093","target_command":"NO"}
+{"query_id":"q_094","question":"Is there guineafowl in the image?","target_synset_id":"n60000094","target_command":"NO"}
+{"query_id":"q_095","question":"Is there capercaillie in the image?","target_synset_id":"n60000095","target_command":"NO"}
+{"query_id":"q_096","question":"Is there razorbill in the image?","target_synset_id":"n60000096","target_command":"NO"}
+{"query_id":"q_097","question":"Is there Atlantic puffin in the image?","target_synset_id":"n60000097","target_command":"NO"}
+{"query_id":"q_098","question":"Is there tuatara in the image?","target_synset_id":"n60000098","target_command":"NO"}
+{"query_id":"q_099","question":"Is there mata mata in the image?","target_synset_id":"n60000099","target_command":"NO"}
+{"query_id":"q_100","question":"Is there Chinese alligator in the image?","target_synset_id":"n60000100","target_command":"NO"}
+{"query_id":"q_101","question":"Is there gharial in the image?","target_synset_id":"n60000101","target_command":"NO"}
+{"query_id":"q_102","question":"Is there caiman lizard in the image?","target_synset_id":"n60000102","target_command":"NO"}
+{"query_id":"q_103","question":"Is there thorny devil in the image?","target_synset_id":"n60000103","target_command":"NO"}
+{"query_id":"q_104","question":"Is there blue-tongued skink in the image?","target_synset_id":"n60000104","target_command":"NO"}
+{"query_id":"q_105","question":"Is there plumed basilisk in the image?","target_synset_id":"n60000105","target_command":"NO"}
