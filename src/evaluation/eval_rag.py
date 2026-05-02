@@ -20,6 +20,8 @@ _VLM_CALL_INTERVAL_SECONDS = 5.0
 class RagEvalModel:
     label: str
     model_name: str
+    base_url: str | None = None
+    api_key_env: str | None = None
 
 
 @dataclass(frozen=True)
@@ -244,8 +246,13 @@ def _build_model_runtime_config(
         raise ValueError("Base runtime config is missing qdrant section")
 
     runtime_inference_cfg = dict(inference_cfg)
+    runtime_inference_cfg["api_format"] = "openai_completions"
     runtime_inference_cfg["model_name"] = model.model_name
     runtime_inference_cfg["condition"] = condition
+    if model.base_url is not None:
+        runtime_inference_cfg["base_url"] = model.base_url
+    if model.api_key_env is not None:
+        runtime_inference_cfg["api_key_env"] = model.api_key_env
 
     return {
         "inference": runtime_inference_cfg,
@@ -264,7 +271,16 @@ def _load_eval_models(
         if not isinstance(inference_cfg, Mapping):
             raise ValueError("`inference` section is required in configs/inference.yaml")
         model_name = _require_non_empty_config_str(inference_cfg, "inference.model_name")
-        return [RagEvalModel(label=_model_label_from_name(model_name), model_name=model_name)]
+        base_url = _optional_non_empty_config_str(inference_cfg, "inference.base_url")
+        api_key_env = _optional_non_empty_config_str(inference_cfg, "inference.api_key_env")
+        return [
+            RagEvalModel(
+                label=_model_label_from_name(model_name),
+                model_name=model_name,
+                base_url=base_url,
+                api_key_env=api_key_env,
+            )
+        ]
 
     if not isinstance(models_raw, list) or not models_raw:
         raise ValueError("evaluation.rag.models must be a non-empty list when provided")
@@ -284,8 +300,23 @@ def _load_eval_models(
         )
         if label in seen_labels:
             raise ValueError(f"Duplicate evaluation.rag.models label: {label}")
+        base_url = _optional_non_empty_config_str(
+            raw_model,
+            f"evaluation.rag.models[{index}].base_url",
+        )
+        api_key_env = _optional_non_empty_config_str(
+            raw_model,
+            f"evaluation.rag.models[{index}].api_key_env",
+        )
         seen_labels.add(label)
-        models.append(RagEvalModel(label=label, model_name=model_name))
+        models.append(
+            RagEvalModel(
+                label=label,
+                model_name=model_name,
+                base_url=base_url,
+                api_key_env=api_key_env,
+            )
+        )
     return models
 
 
@@ -299,6 +330,16 @@ def _require_non_empty_config_str(item: Mapping[str, object], key: str) -> str:
     value = item.get(field_name)
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"Config key `{key}` must be a non-empty string")
+    return value.strip()
+
+
+def _optional_non_empty_config_str(item: Mapping[str, object], key: str) -> str | None:
+    field_name = key.rsplit(".", maxsplit=1)[-1]
+    value = item.get(field_name)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Config key `{key}` must be a non-empty string when provided")
     return value.strip()
 
 

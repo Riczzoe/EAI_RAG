@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import base64
 from collections.abc import Mapping
+import mimetypes
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 from src.models.vlm_interface import call_vlm
 from src.qdrant import LocalQdrantConfig, LocalQdrantStore
@@ -74,7 +77,7 @@ class RAGRunner:
             context=context,
             system_prompt=str(self._inference_cfg.get("system_prompt", "")),
         )
-        response = call_vlm(messages=messages, model_name=str(self._inference_cfg["model_name"]))
+        response = call_vlm(messages=messages, inference_config=self._inference_cfg)
 
         return {
             "condition": selected_condition,
@@ -153,20 +156,25 @@ def _build_messages(
         if formatted:
             user_prompt += "\n\n## Object-related description\n" + "\n".join(formatted)
 
-    user_content: list[dict[str, str]] = [{"text": user_prompt}]
+    user_content: list[dict[str, object]] = [{"type": "text", "text": user_prompt}]
 
     image_paths = context.get("image_paths")
     if isinstance(image_paths, list):
         for image_path in image_paths:
             if isinstance(image_path, str) and image_path.strip():
-                user_content.append({"image": _to_file_uri(image_path)})
+                user_content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": _to_image_data_url(image_path)},
+                    }
+                )
 
     messages: list[dict[str, object]] = []
     if system_prompt.strip():
         messages.append(
             {
                 "role": "system",
-                "content": [{"text": system_prompt.strip()}],
+                "content": system_prompt.strip(),
             }
         )
     messages.append(
@@ -177,15 +185,41 @@ def _build_messages(
     )
     return messages
 
-def _to_file_uri(path_text: str) -> str:
-    if path_text.startswith("file://"):
+
+def _to_image_data_url(path_text: str) -> str:
+    if path_text.startswith("data:image/"):
         return path_text
-    path = Path(path_text).expanduser()
+
+    path = _resolve_local_image_path(path_text)
+    mime_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    if not mime_type.startswith("image/"):
+        raise ValueError(f"Unsupported image MIME type for {path}: {mime_type}")
+
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def _resolve_local_image_path(path_text: str) -> Path:
+    if not isinstance(path_text, str) or not path_text.strip():
+        raise ValueError("image path must be a non-empty string")
+
+    normalized = path_text.strip()
+    if normalized.startswith("file://"):
+        parsed = urlparse(normalized)
+        if parsed.netloc and parsed.netloc not in {"localhost", "127.0.0.1"}:
+            raise ValueError(f"Only local file:// image URIs are supported: {path_text}")
+        path = Path(unquote(parsed.path))
+    else:
+        path = Path(normalized).expanduser()
+
     if not path.is_absolute():
         path = (Path.cwd() / path).resolve()
     else:
         path = path.resolve()
-    return path.as_uri()
+
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f"RAG image not found: {path}")
+    return path
 
 
 def _read_inference_config(config: Mapping[str, object]) -> Mapping[str, object]:
@@ -195,7 +229,14 @@ def _read_inference_config(config: Mapping[str, object]) -> Mapping[str, object]
     else:
         section = config
 
-    required_keys = ["model_name", "condition", "top_k"]
+    required_keys = [
+        "api_format",
+        "model_name",
+        "api_key_env",
+        "base_url",
+        "condition",
+        "top_k",
+    ]
     for key in required_keys:
         if key not in section:
             raise ValueError(f"Missing required inference config key: {key}")

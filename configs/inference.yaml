@@ -1,5 +1,8 @@
 inference:
+  api_format: openai_completions
   model_name: qwen3-vl-plus
+  api_key_env: DASHSCOPE_API_KEY
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   condition: text_image
   top_k: 1
   max_text_items: 1

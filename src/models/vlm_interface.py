@@ -1,28 +1,51 @@
-"""DashScope VLM interface (v1)."""
+"""OpenAI Chat Completions compatible VLM interface."""
 
 from __future__ import annotations
+
+from collections.abc import Mapping
 import os
-import dashscope
 
-def call_vlm(messages: list[dict[str, object]], model_name: str = "qwen-vl-plus") -> object:
-    """Public entrypoint that routes calls by model_name."""
-    if model_name.startswith("qwen"):
-        return call_qwen(messages, model_name)
-    raise ValueError(f"Unsupported model_name: {model_name!r}")
+from openai import OpenAI
 
-def call_qwen(messages: list[dict[str, object]], model_name: str = "qwen-vl-plus"):
-    """Call DashScope Qwen multimodal models."""
+
+def call_vlm(
+    *,
+    messages: list[dict[str, object]],
+    inference_config: Mapping[str, object],
+) -> str:
+    """Call a VLM through the OpenAI Chat Completions API format."""
     if not isinstance(messages, list) or not messages:
         raise ValueError("messages must be a non-empty list")
 
-    dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
-    response = dashscope.MultiModalConversation.call(
-        api_key = os.getenv("DASHSCOPE_API_KEY"),
+    api_format = _require_non_empty_config_str(inference_config, "api_format")
+    if api_format != "openai_completions":
+        raise ValueError(
+            f"Unsupported inference.api_format: {api_format!r}. "
+            "Expected: openai_completions."
+        )
+
+    model_name = _require_non_empty_config_str(inference_config, "model_name")
+    api_key_env = _require_non_empty_config_str(inference_config, "api_key_env")
+    base_url = _require_non_empty_config_str(inference_config, "base_url")
+
+    api_key = os.getenv(api_key_env)
+    if not api_key:
+        raise ValueError(f"Environment variable `{api_key_env}` is required for VLM calls")
+
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    response = client.chat.completions.create(
         model=model_name,
         messages=messages,
     )
-    status_code = getattr(response, "status_code", None)
-    if status_code is not None and status_code != 200:
-        message = getattr(response, "message", "unknown error")
-        raise RuntimeError(f"DashScope call failed (status={status_code}): {message}")
-    return response.output.choices[0].message.content[0]["text"]
+
+    content = response.choices[0].message.content
+    if not isinstance(content, str):
+        raise ValueError("OpenAI Chat Completions response content must be a string")
+    return content
+
+
+def _require_non_empty_config_str(config: Mapping[str, object], key: str) -> str:
+    value = config.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"inference.{key} must be a non-empty string")
+    return value.strip()
