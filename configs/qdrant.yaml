@@ -1,5 +1,7 @@
 qdrant:
-  storage_path: storage/qdrant
+  mode: server
+  url: http://localhost:6333
+  api_key_env:
   collection_name: kb_text
   entries_jsonl_path: data/processed/kb/entries.jsonl
   recreate_collection: true

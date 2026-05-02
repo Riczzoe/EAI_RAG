@@ -40,7 +40,7 @@ def main() -> None:
         model_name = item.get("model_name", "<unknown>")
         condition = item.get("condition", "<unknown>")
         status = item.get("status", "ok")
-        print(f"model_label: {model_label}")
+        print(f"\n------------------\nmodel_label: {model_label}")
         print(f"model_name: {model_name}")
         print(f"condition: {condition}")
         print(f"status: {status}")

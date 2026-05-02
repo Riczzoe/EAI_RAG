@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from src.models.vlm_interface import call_vlm
-from src.qdrant import LocalQdrantConfig, LocalQdrantStore
+from src.qdrant import QdrantStore, build_qdrant_store_config
 from src.rag.context_builder import build_context
 from src.rag.image_preprocess import resize_image_paths
 
@@ -28,15 +28,8 @@ class RAGRunner:
                 "Run sync first, then set recreate_collection=false."
             )
 
-        self._store = LocalQdrantStore(
-            LocalQdrantConfig(
-                storage_path=Path(str(qdrant_cfg["storage_path"])),
-                collection_name=str(qdrant_cfg["collection_name"]),
-                recreate_collection=False,
-                embedding_model=str(qdrant_cfg["embedding_model"]),
-                distance=str(qdrant_cfg["distance"]),
-                batch_size=int(qdrant_cfg.get("batch_size", 32)),
-            )
+        self._store = QdrantStore(
+            build_qdrant_store_config(qdrant_cfg, recreate_collection=False)
         )
         if not self._store.collection_exists():
             raise RuntimeError(
@@ -248,7 +241,7 @@ def _read_qdrant_config(config: Mapping[str, object]) -> Mapping[str, object]:
     if not isinstance(qdrant, Mapping):
         raise ValueError("Missing `qdrant` section in config")
 
-    required_keys = ["storage_path", "collection_name", "embedding_model", "distance"]
+    required_keys = ["collection_name", "embedding_model", "distance"]
     for key in required_keys:
         if key not in qdrant:
             raise ValueError(f"Missing required qdrant config key: qdrant.{key}")

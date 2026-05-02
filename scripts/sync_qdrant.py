@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a local Qdrant store from processed KB entries."""
+"""Build a Qdrant store from processed KB entries."""
 
 from __future__ import annotations
 
@@ -22,8 +22,12 @@ def main() -> None:
 
     print("=== sync_qdrant ===")
     print(f"Config: {config_path}")
+    print(f"Mode: {qdrant_cfg.mode}")
     print(f"Collection: {qdrant_cfg.collection_name}")
-    print(f"Storage path: {qdrant_cfg.storage_path}")
+    if qdrant_cfg.mode == "server":
+        print(f"URL: {qdrant_cfg.url}")
+    else:
+        print(f"Storage path: {qdrant_cfg.storage_path}")
     print(f"Entries source: {qdrant_cfg.entries_jsonl_path}")
     print(f"Embedding model: {qdrant_cfg.embedding_model}")
     print(f"Total rows: {stats.total_rows}")

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from src.qdrant import LocalQdrantConfig, LocalQdrantStore
+from src.qdrant import QdrantStore, build_qdrant_store_config
 from src.utils.io import load_yaml
 
 
@@ -135,27 +135,18 @@ def _load_eval_queries(path: Path) -> list[dict[str, str]]:
     return queries
 
 
-def _init_qdrant_store(qdrant_config_path: Path) -> LocalQdrantStore:
+def _init_qdrant_store(qdrant_config_path: Path) -> QdrantStore:
     raw = load_yaml(qdrant_config_path)
     section = raw.get("qdrant")
     if not isinstance(section, Mapping):
         raise ValueError("`qdrant` section is required in configs/qdrant.yaml")
 
-    required = ["storage_path", "collection_name", "embedding_model", "distance"]
+    required = ["collection_name", "embedding_model", "distance"]
     for key in required:
         if key not in section:
             raise ValueError(f"Missing required qdrant config key: qdrant.{key}")
 
-    store = LocalQdrantStore(
-        LocalQdrantConfig(
-            storage_path=Path(str(section["storage_path"])),
-            collection_name=str(section["collection_name"]),
-            recreate_collection=False,
-            embedding_model=str(section["embedding_model"]),
-            distance=str(section["distance"]),
-            batch_size=int(section.get("batch_size", 32)),
-        )
-    )
+    store = QdrantStore(build_qdrant_store_config(section, recreate_collection=False))
 
     if not store.collection_exists():
         raise RuntimeError("Qdrant collection does not exist. Run sync before evaluation.")

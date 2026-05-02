@@ -1,16 +1,21 @@
-"""Dense semantic retrieval helpers built on a local Qdrant collection."""
+"""Dense semantic retrieval helpers for local or server Qdrant collections."""
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 
 @dataclass(frozen=True)
-class LocalQdrantConfig:
-    storage_path: Path
+class QdrantStoreConfig:
+    mode: str
+    url: str | None
+    api_key_env: str | None
+    storage_path: Path | None
     collection_name: str
     recreate_collection: bool
     embedding_model: str
@@ -18,16 +23,34 @@ class LocalQdrantConfig:
     batch_size: int
 
 
-class LocalQdrantStore:
-    """Manage dense vector upserts and semantic search in a local Qdrant collection."""
+class QdrantStore:
+    """Manage dense vector upserts and semantic search in a Qdrant collection."""
 
-    def __init__(self, config: LocalQdrantConfig) -> None:
+    def __init__(self, config: QdrantStoreConfig) -> None:
         self.config = config
-        self.config.storage_path.mkdir(parents=True, exist_ok=True)
-        self._client = QdrantClient(path=str(self.config.storage_path))
+        if self.config.mode == "server":
+            if not self.config.url:
+                raise ValueError("qdrant.url is required when qdrant.mode is server")
+            api_key = os.getenv(self.config.api_key_env) if self.config.api_key_env else None
+            self._client = QdrantClient(url=self.config.url, api_key=api_key)
+        elif self.config.mode == "local":
+            if self.config.storage_path is None:
+                raise ValueError("qdrant.storage_path is required when qdrant.mode is local")
+            self.config.storage_path.mkdir(parents=True, exist_ok=True)
+            self._client = QdrantClient(path=str(self.config.storage_path))
+        else:
+            raise ValueError("qdrant.mode must be either 'server' or 'local'")
 
     @property
-    def storage_path(self) -> Path:
+    def mode(self) -> str:
+        return self.config.mode
+
+    @property
+    def url(self) -> str | None:
+        return self.config.url
+
+    @property
+    def storage_path(self) -> Path | None:
         return self.config.storage_path
 
     @property
@@ -148,6 +171,65 @@ def _parse_distance(distance: str):
         ) from exc
 
 
+def build_qdrant_store_config(
+    qdrant_cfg: Mapping[str, object],
+    *,
+    recreate_collection: bool | None = None,
+) -> QdrantStoreConfig:
+    """Build a QdrantStoreConfig from a qdrant YAML section."""
+    mode = str(qdrant_cfg.get("mode", "server")).strip().lower()
+    if mode not in {"server", "local"}:
+        raise ValueError("qdrant.mode must be either 'server' or 'local'")
+
+    collection_name = _require_non_empty_config_str(qdrant_cfg, "collection_name")
+    embedding_model = _require_non_empty_config_str(qdrant_cfg, "embedding_model")
+    distance = _require_non_empty_config_str(qdrant_cfg, "distance")
+
+    batch_size = int(qdrant_cfg.get("batch_size", 32))
+    if batch_size <= 0:
+        raise ValueError("qdrant.batch_size must be > 0")
+
+    if recreate_collection is None:
+        recreate = bool(qdrant_cfg.get("recreate_collection", False))
+    else:
+        recreate = recreate_collection
+
+    url: str | None = None
+    storage_path: Path | None = None
+    if mode == "server":
+        url = _require_non_empty_config_str(qdrant_cfg, "url")
+    else:
+        storage_path = Path(_require_non_empty_config_str(qdrant_cfg, "storage_path"))
+
+    return QdrantStoreConfig(
+        mode=mode,
+        url=url,
+        api_key_env=_optional_non_empty_config_str(qdrant_cfg, "api_key_env"),
+        storage_path=storage_path,
+        collection_name=collection_name,
+        recreate_collection=recreate,
+        embedding_model=embedding_model,
+        distance=distance,
+        batch_size=batch_size,
+    )
+
+
+def _require_non_empty_config_str(config: Mapping[str, object], key: str) -> str:
+    value = config.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"qdrant.{key} must be a non-empty string")
+    return value.strip()
+
+
+def _optional_non_empty_config_str(config: Mapping[str, object], key: str) -> str | None:
+    value = config.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"qdrant.{key} must be a non-empty string when provided")
+    return value.strip()
+
+
 def _to_string(value: object) -> str:
     if isinstance(value, str):
         return value
@@ -162,3 +244,30 @@ def _to_string_list(value: object) -> list[str]:
                 normalized.append(item.strip())
         return normalized
     return []
+
+
+class LocalQdrantConfig(QdrantStoreConfig):
+    """Backward-compatible config for embedded local Qdrant."""
+
+    def __init__(
+        self,
+        *,
+        storage_path: Path,
+        collection_name: str,
+        recreate_collection: bool,
+        embedding_model: str,
+        distance: str,
+        batch_size: int,
+    ) -> None:
+        object.__setattr__(self, "mode", "local")
+        object.__setattr__(self, "url", None)
+        object.__setattr__(self, "api_key_env", None)
+        object.__setattr__(self, "storage_path", storage_path)
+        object.__setattr__(self, "collection_name", collection_name)
+        object.__setattr__(self, "recreate_collection", recreate_collection)
+        object.__setattr__(self, "embedding_model", embedding_model)
+        object.__setattr__(self, "distance", distance)
+        object.__setattr__(self, "batch_size", batch_size)
+
+
+LocalQdrantStore = QdrantStore
