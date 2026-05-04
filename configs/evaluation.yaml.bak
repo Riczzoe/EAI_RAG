@@ -1,0 +1,29 @@
+evaluation:
+  retrieval:
+    retrieval_eval_path: configs/evaluation/retrieval_eval.jsonl
+    top_k: 5
+    repeat_per_query: 1
+    output_path: outputs/evaluation/retrieval_eval_result.json
+    include_query_details: true
+
+  rag:
+    rag_eval_path: configs/evaluation/retrieval_eval.jsonl
+    conditions:
+      # - text_only
+      # - image_only
+      - text_image
+    top_k:   3
+    max_images:   3
+    max_text_items:   3
+    models:
+      - label: qwen3_vl_plus
+        model_name: qwen3-vl-plus
+        api_key_env: DASHSCOPE_API_KEY
+        base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      # - label: qwen3.6_plus
+      #   model_name: qwen3.6-plus
+      #   api_key_env: DASHSCOPE_API_KEY
+      #   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    repeat_per_query: 10
+    output_path: outputs/evaluation/eval_rag_result.json
+    include_query_details: true

@@ -29,6 +29,9 @@ class RagEvalConfig:
     rag_eval_path: Path
     conditions: list[str]
     models: list[RagEvalModel]
+    top_k: int | None
+    max_images: int | None
+    max_text_items: int | None
     repeat_per_query: int
     output_path: Path
     include_query_details: bool
@@ -56,7 +59,9 @@ def run_rag_eval(
                 base_runtime_config=base_runtime_config,
                 model=model,
                 condition=condition,
+                eval_config=eval_cfg,
             )
+            rag_params = _extract_rag_params(runtime_config)
             try:
                 runner = RAGRunner(runtime_config)
                 results.append(
@@ -68,6 +73,7 @@ def run_rag_eval(
                         repeat_per_query=eval_cfg.repeat_per_query,
                         include_query_details=eval_cfg.include_query_details,
                         has_vlm_call_started=has_vlm_call_started,
+                        rag_params=rag_params,
                     )
                 )
             except Exception as exc:
@@ -78,6 +84,7 @@ def run_rag_eval(
                         "condition": condition,
                         "status": "failed",
                         "error": str(exc),
+                        **rag_params,
                     }
                 )
 
@@ -99,6 +106,7 @@ def _evaluate_one_condition(
     repeat_per_query: int,
     include_query_details: bool,
     has_vlm_call_started: list[bool] | None = None,
+    rag_params: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     match_count = 0
     successful_count = 0
@@ -128,6 +136,8 @@ def _evaluate_one_condition(
                 match_count += 1
 
             if include_query_details:
+                retrieved_synset_ids = _extract_retrieved_synset_ids(rag_result)
+                message_image_count = _count_message_images(rag_result.get("messages"))
                 query_details.append(
                     {
                         "model_label": model.label,
@@ -140,6 +150,8 @@ def _evaluate_one_condition(
                         "condition": condition,
                         "repeat_index": repeat_index,
                         "status": "ok",
+                        "retrieved_synset_ids": retrieved_synset_ids,
+                        "message_image_count": message_image_count,
                     }
                 )
 
@@ -155,6 +167,8 @@ def _evaluate_one_condition(
         "repeat_per_query": repeat_per_query,
         "vlm_call_interval_seconds": _VLM_CALL_INTERVAL_SECONDS,
     }
+    if rag_params is not None:
+        summary.update(dict(rag_params))
     if include_query_details:
         summary["queries"] = query_details
     return summary
@@ -201,10 +215,17 @@ def _load_rag_eval_config(
     if repeat_per_query <= 0:
         raise ValueError("repeat_per_query must be > 0")
 
+    top_k = _optional_positive_int(section, "evaluation.rag.top_k")
+    max_images = _optional_positive_int(section, "evaluation.rag.max_images")
+    max_text_items = _optional_positive_int(section, "evaluation.rag.max_text_items")
+
     return RagEvalConfig(
         rag_eval_path=Path(str(section["rag_eval_path"])),
         conditions=conditions,
         models=models,
+        top_k=top_k,
+        max_images=max_images,
+        max_text_items=max_text_items,
         repeat_per_query=repeat_per_query,
         output_path=Path(str(section["output_path"])),
         include_query_details=bool(section.get("include_query_details", False)),
@@ -237,6 +258,7 @@ def _build_model_runtime_config(
     base_runtime_config: Mapping[str, object],
     model: RagEvalModel,
     condition: str,
+    eval_config: RagEvalConfig | None = None,
 ) -> dict[str, object]:
     inference_cfg = base_runtime_config.get("inference")
     qdrant_cfg = base_runtime_config.get("qdrant")
@@ -253,11 +275,61 @@ def _build_model_runtime_config(
         runtime_inference_cfg["base_url"] = model.base_url
     if model.api_key_env is not None:
         runtime_inference_cfg["api_key_env"] = model.api_key_env
+    if eval_config is not None and eval_config.top_k is not None:
+        runtime_inference_cfg["top_k"] = eval_config.top_k
+    if eval_config is not None and eval_config.max_images is not None:
+        runtime_inference_cfg["max_images"] = eval_config.max_images
+    if eval_config is not None and eval_config.max_text_items is not None:
+        runtime_inference_cfg["max_text_items"] = eval_config.max_text_items
 
     return {
         "inference": runtime_inference_cfg,
         "qdrant": dict(qdrant_cfg),
     }
+
+
+def _extract_rag_params(runtime_config: Mapping[str, object]) -> dict[str, object]:
+    inference_cfg = runtime_config.get("inference")
+    if not isinstance(inference_cfg, Mapping):
+        raise ValueError("Runtime config is missing inference section")
+
+    params: dict[str, object] = {}
+    for key in ("top_k", "max_images", "max_text_items"):
+        if key in inference_cfg:
+            params[key] = inference_cfg[key]
+    return params
+
+
+def _extract_retrieved_synset_ids(rag_result: Mapping[str, object]) -> list[str]:
+    retrieved_entries = rag_result.get("retrieved_entries")
+    if not isinstance(retrieved_entries, list):
+        return []
+
+    synset_ids: list[str] = []
+    for entry in retrieved_entries:
+        if not isinstance(entry, Mapping):
+            continue
+        synset_id = entry.get("synset_id")
+        if isinstance(synset_id, str) and synset_id.strip():
+            synset_ids.append(synset_id.strip())
+    return synset_ids
+
+
+def _count_message_images(messages: object) -> int:
+    if not isinstance(messages, list):
+        return 0
+
+    image_count = 0
+    for message in messages:
+        if not isinstance(message, Mapping):
+            continue
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if isinstance(part, Mapping) and part.get("type") == "image_url":
+                image_count += 1
+    return image_count
 
 
 def _load_eval_models(
@@ -341,6 +413,22 @@ def _optional_non_empty_config_str(item: Mapping[str, object], key: str) -> str 
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"Config key `{key}` must be a non-empty string when provided")
     return value.strip()
+
+
+def _optional_positive_int(item: Mapping[str, object], key: str) -> int | None:
+    field_name = key.rsplit(".", maxsplit=1)[-1]
+    value = item.get(field_name)
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise ValueError(f"Config key `{key}` must be an integer when provided")
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Config key `{key}` must be an integer when provided") from exc
+    if parsed <= 0:
+        raise ValueError(f"Config key `{key}` must be > 0 when provided")
+    return parsed
 
 
 def _load_eval_queries(path: Path) -> list[dict[str, str]]:
