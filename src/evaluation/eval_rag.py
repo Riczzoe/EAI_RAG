@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 import json
 import re
@@ -41,6 +41,7 @@ def run_rag_eval(
     eval_config_path: Path = Path("configs/evaluation.yaml"),
     inference_config_path: Path = Path("configs/inference.yaml"),
     qdrant_config_path: Path = Path("configs/qdrant.yaml"),
+    result_callback: Callable[[Mapping[str, object]], None] | None = None,
 ) -> dict[str, object]:
     """Run RAG compliance evaluation for all configured model/condition pairs."""
     eval_cfg = _load_rag_eval_config(
@@ -64,29 +65,29 @@ def run_rag_eval(
             rag_params = _extract_rag_params(runtime_config)
             try:
                 runner = RAGRunner(runtime_config)
-                results.append(
-                    _evaluate_one_condition(
-                        runner=runner,
-                        queries=queries,
-                        condition=condition,
-                        model=model,
-                        repeat_per_query=eval_cfg.repeat_per_query,
-                        include_query_details=eval_cfg.include_query_details,
-                        has_vlm_call_started=has_vlm_call_started,
-                        rag_params=rag_params,
-                    )
+                condition_result = _evaluate_one_condition(
+                    runner=runner,
+                    queries=queries,
+                    condition=condition,
+                    model=model,
+                    repeat_per_query=eval_cfg.repeat_per_query,
+                    include_query_details=eval_cfg.include_query_details,
+                    has_vlm_call_started=has_vlm_call_started,
+                    rag_params=rag_params,
                 )
             except Exception as exc:
-                results.append(
-                    {
-                        "model_label": model.label,
-                        "model_name": model.model_name,
-                        "condition": condition,
-                        "status": "failed",
-                        "error": str(exc),
-                        **rag_params,
-                    }
-                )
+                condition_result = {
+                    "model_label": model.label,
+                    "model_name": model.model_name,
+                    "condition": condition,
+                    "status": "failed",
+                    "error": str(exc),
+                    **rag_params,
+                }
+
+            results.append(condition_result)
+            if result_callback is not None:
+                result_callback(condition_result)
 
     return {"results": results}
 
