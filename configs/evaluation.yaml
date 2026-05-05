@@ -31,14 +31,14 @@ evaluation:
         model_name: google/gemini-2.5-pro
         api_key_env: OFOX_API_KEY
         base_url: https://api.ofox.ai/v1
-        # - label: openai-gpt-4o-mini
-        #   model_name: openai/gpt-4o-mini
-        #   api_key_env: OFOX_API_KEY
-        #   base_url: https://api.ofox.ai/v1
-        # - label: openai-gpt-4o
-        #   model_name: openai/gpt-4o
-        #   api_key_env: OFOX_API_KEY
-        #   base_url: https://api.ofox.ai/v1
+      - label: openai-gpt-4o-mini
+        model_name: openai/gpt-4o-mini
+        api_key_env: OFOX_API_KEY
+        base_url: https://api.ofox.ai/v1
+      - label: openai-gpt-4o
+        model_name: openai/gpt-4o
+        api_key_env: OFOX_API_KEY
+        base_url: https://api.ofox.ai/v1
         # - label: openai-gpt-5.4
         #   model_name: openai/gpt-5.4
         #   api_key_env: OFOX_API_KEY
@@ -75,6 +75,6 @@ evaluation:
         #   model_name: openai/gpt-5-mini
         #   api_key_env: OFOX_API_KEY
         #   base_url: https://api.ofox.ai/v1
-    repeat_per_query: 5
+    repeat_per_query: 1
     output_path: outputs/evaluation/eval_rag_result.json
     include_query_details: true
